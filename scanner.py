@@ -1,39 +1,53 @@
 import cv2
 from pyzbar import pyzbar
-import database  # This imports the file you made earlier!
+import requests
+import database
+
+def lookup_barcode_online(barcode):
+    """Checks the Open Food Facts API for the product name."""
+    print(f"Searching internet for {barcode}...")
+    try:
+        url = f"https://world.openfoodfacts.org/api/v0/product/{barcode}.json"
+        # We add a 'User-Agent' so the website knows who we are (standard practice)
+        headers = {'User-Agent': 'DLSU_InventoryProject - Android - Version 1.0'}
+        response = requests.get(url, headers=headers, timeout=5).json()
+        
+        if response.get("status") == 1:
+            name = response["product"].get("product_name", "Unknown Item")
+            print(f"Found: {name}")
+            return name
+    except Exception as e:
+        print(f"Internet error: {e}")
+    
+    return None
 
 def start_scanner():
-    # 1. Initialize the camera
     cap = cv2.VideoCapture(0)
-    print("Camera active. Point it at a barcode! (Press 'q' to stop)")
+    print("Scanner Active. (Press 'q' to quit)")
 
     while True:
         ret, frame = cap.read()
-        if not ret:
-            break
+        if not ret: break
 
-        # 2. Find and decode barcodes in the frame
         barcodes = pyzbar.decode(frame)
-
         for barcode in barcodes:
-            # Extract the barcode data as a string
             barcode_data = barcode.data.decode("utf-8")
             
-            # Draw a rectangle around the barcode in the video feed
-            (x, y, w, h) = barcode.rect
-            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            # --- NEW LOGIC START ---
+            # 1. Try to find the name online
+            item_name = lookup_barcode_online(barcode_data)
+            
+            # 2. If not found online, ask the user in the terminal
+            if not item_name:
+                print(f"!!! Barcode {barcode_data} not found in database.")
+                item_name = input("Please enter the name for this item: ")
+            
+            # 3. Save to your local database
+            database.add_or_update_item(barcode_data, item_name, 1)
+            print(f"Saved: {item_name} (Qty: 1)")
+            # --- NEW LOGIC END ---
 
-            print(f"Scanned Barcode: {barcode_data}")
-
-            # 3. Logic: If scanned, update the database
-            # For now, we'll label everything "New Item" until we build the UI
-            database.add_or_update_item(barcode_data, "New Item", 1)
-            print(f"Updated {barcode_data} in database.")
-
-        # Display the camera feed
         cv2.imshow("Inventory Scanner", frame)
-
-        # Stop if 'q' is pressed
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
@@ -41,6 +55,5 @@ def start_scanner():
     cv2.destroyAllWindows()
 
 if __name__ == "__main__":
-    # Ensure the database table exists before scanning
     database.create_db()
     start_scanner()

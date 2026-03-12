@@ -3,6 +3,8 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.core.window import Window
+from kivy.uix.popup import Popup
+from kivy.uix.textinput import TextInput
 
 # Import your working project files
 import exporter
@@ -45,7 +47,43 @@ class InventoryApp(App):
     # --- Actions for the Buttons ---
     def run_scanner(self, instance):
         print("Launching scanner...")
-        scanner.start_scanner()
+        # The scanner runs, and we wait to see if it catches an unknown barcode
+        unknown_barcode = scanner.start_scanner()
+        
+        # If it handed back a barcode, open the popup!
+        if unknown_barcode:
+            self.show_manual_entry_popup(unknown_barcode)
+
+    def show_manual_entry_popup(self, barcode):
+        # 1. Build the inside of the Pop-up
+        content = BoxLayout(orientation='vertical', padding=10, spacing=10)
+        
+        # Instructions
+        content.add_widget(Label(text=f"Barcode: {barcode}\nNot found online. Enter name:"))
+        
+        # Text Box for typing (Touchscreen friendly!)
+        name_input = TextInput(hint_text="e.g., Boy Bawang", multiline=False, font_size='20sp')
+        content.add_widget(name_input)
+        
+        # Save Button
+        btn_save = Button(text="Save Item", size_hint=(1, 0.4), background_color=(0.1, 0.8, 0.1, 1))
+        content.add_widget(btn_save)
+        
+        # 2. Create the Pop-up window
+        popup = Popup(title="New Item Detected!", content=content, size_hint=(0.85, 0.4))
+        
+        # 3. What happens when they click Save?
+        def save_and_close(instance):
+            item_name = name_input.text
+            if item_name: # Make sure they didn't leave it blank
+                database.add_or_update_item(barcode, item_name, 1)
+                print(f"Saved via UI: {item_name}")
+            popup.dismiss() # Close the popup
+            
+        btn_save.bind(on_press=save_and_close)
+        
+        # 4. Show it on screen!
+        popup.open()
 
     def run_excel_export(self, instance):
         print("Exporting Excel...")

@@ -34,6 +34,9 @@ def start_scanner():
     cap = cv2.VideoCapture(0)
     print("Scanner Active. (Press 'q' to quit)")
 
+    cv2.namedWindow("Inventory Scanner", cv2.WINDOW_NORMAL)
+    cv2.setWindowProperty("Inventory Scanner", cv2.WND_PROP_TOPMOST, 1)
+
     while True:
         ret, frame = cap.read()
         if not ret: break

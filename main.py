@@ -106,51 +106,103 @@ class HomeScreen(Screen):
 
 
 # ==========================================
-# SCREEN 2: SCANNER SCREEN
+# SCREEN 2: SCANNER SCREEN (PERFECTLY CENTERED TEXT)
 # ==========================================
+from kivy.graphics import Color, Rectangle, Line
+from kivy.uix.floatlayout import FloatLayout
+from kivy.uix.widget import Widget
+
 class ScannerScreen(Screen):
     def on_enter(self):
         self.clear_widgets()
-        layout = BoxLayout(orientation='vertical')
+        self.is_manual_open = False # Track if the dropdown is open
         
-        # --- Top Bar (Matches Sketch) ---
-        top_bar = BoxLayout(orientation='horizontal', size_hint=(1, 0.1), padding=10)
-        btn_back = Button(text="<", background_normal='', background_color=WHITE, color=BLACK, font_size='20sp', size_hint=(0.15, 1))
-        def go_home(instance):
-            self.manager.transition = SlideTransition(direction='right')
-            self.manager.current = 'home'
-        btn_back.bind(on_press=go_home)
+        # FloatLayout lets us layer the UI perfectly over the background
+        self.layout = FloatLayout()
         
-        lbl_manual = Label(text="Enter Barcode Manually?", color=BLACK, bold=True, size_hint=(0.7, 1))
+        # --- 1. BASE LAYER: Camera & Bottom Bar ---
+        self.base_layout = BoxLayout(orientation='vertical')
         
-        btn_drop = Button(text="v", background_normal='', background_color=WHITE, color=BLACK, font_size='20sp', size_hint=(0.15, 1))
-        btn_drop.bind(on_press=self.toggle_manual_entry)
-
-        top_bar.add_widget(btn_back)
-        top_bar.add_widget(lbl_manual)
-        top_bar.add_widget(btn_drop)
-        layout.add_widget(top_bar)
-
-        # --- The Hidden Dropdown Panel ---
-        self.manual_panel = BoxLayout(orientation='horizontal', size_hint_y=None, height=0, opacity=0, padding=10, spacing=10)
-        self.manual_input = TextInput(hint_text="Barcode #", multiline=False, size_hint=(0.7, 1))
+        # Spacer: Pushes the camera down so it sits under the Top Bar & Tab
+        self.base_layout.add_widget(Widget(size_hint_y=None, height=85))
+        
+        # Camera Feed (keep_ratio prevents stretching!)
+        self.img = Image(size_hint=(1, 1), keep_ratio=True, allow_stretch=True)
+        self.base_layout.add_widget(self.img)
+        
+        # The Bottom Bar
+        self.bot_bar = BoxLayout(orientation='horizontal', size_hint=(1, None), height=60, padding=10, spacing=10)
+        self.bot_bar.add_widget(Button(text="Flash", background_normal='', background_color=DARK_GREEN))
+        self.bot_bar.add_widget(Button(text="Flip Cam", background_normal='', background_color=DARK_GREEN))
+        self.base_layout.add_widget(self.bot_bar)
+        
+        self.layout.add_widget(self.base_layout)
+        
+        # --- 2. OVERLAY LAYER: The Dropdown UI ---
+        # This sits at the very top of the screen and grows downwards
+        self.overlay = BoxLayout(orientation='vertical', size_hint=(1, None), pos_hint={'top': 1})
+        self.overlay.bind(minimum_height=self.overlay.setter('height'))
+        
+        # Part A: The fixed Top Bar (White with black bottom border)
+        self.top_bar = BoxLayout(orientation='horizontal', size_hint=(1, None), height=60, padding=[10, 0])
+        
+        with self.top_bar.canvas.before:
+            Color(1, 1, 1, 1) # White Background
+            self.top_rect = Rectangle(size=self.top_bar.size, pos=self.top_bar.pos)
+            
+        with self.top_bar.canvas.after:
+            Color(0, 0, 0, 1) # Thin Black Border Line
+            self.top_line = Line(points=[self.top_bar.x, self.top_bar.y, self.top_bar.right, self.top_bar.y], width=1)
+            
+        self.top_bar.bind(size=self._update_top_rect, pos=self._update_top_rect)
+        
+        # PERFECT CENTERING FIX: Left (15%) + Center (70%) + Right (15%)
+        btn_back = Button(text="<", background_normal='', background_color=(0,0,0,0), color=BLACK, font_size='24sp', bold=True, size_hint=(0.15, 1))
+        btn_back.bind(on_press=lambda x: setattr(self.manager, 'current', 'home'))
+        
+        lbl_title = Label(text="Enter Barcode manually?", color=BLACK, bold=True, halign="center", font_size='18sp', size_hint=(0.70, 1))
+        
+        spacer_right = Widget(size_hint=(0.15, 1)) # The invisible balance weight!
+        
+        self.top_bar.add_widget(btn_back)
+        self.top_bar.add_widget(lbl_title)
+        self.top_bar.add_widget(spacer_right)
+        self.overlay.add_widget(self.top_bar)
+        
+        # Part B: The Sliding Input Area
+        self.slide_area = BoxLayout(orientation='horizontal', size_hint=(1, None), height=0, opacity=0, padding=[10, 5, 10, 5], spacing=10)
+        
+        with self.slide_area.canvas.before:
+            Color(1, 1, 1, 1)
+            self.slide_rect = Rectangle(size=self.slide_area.size, pos=self.slide_area.pos)
+            
+        with self.slide_area.canvas.after:
+            Color(0, 0, 0, 1) 
+            self.slide_line = Line(points=[self.slide_area.x, self.slide_area.y, self.slide_area.right, self.slide_area.y], width=1)
+            
+        self.slide_area.bind(size=self._update_slide_rect, pos=self._update_slide_rect)
+        
+        self.manual_input = TextInput(hint_text="Barcode #", multiline=False, size_hint=(0.7, 1), font_size='16sp')
         self.manual_search = Button(text="Search", background_normal='', background_color=GREEN, size_hint=(0.3, 1))
         self.manual_search.bind(on_press=self.run_manual_search)
-        self.manual_panel.add_widget(self.manual_input)
-        self.manual_panel.add_widget(self.manual_search)
-        layout.add_widget(self.manual_panel)
-
-        # --- Camera Feed ---
-        self.img = Image(size_hint=(1, 0.75))
-        layout.add_widget(self.img)
-
-        # --- Bottom Controls ---
-        bot_bar = BoxLayout(orientation='horizontal', size_hint=(1, 0.1), padding=10, spacing=10)
-        bot_bar.add_widget(Button(text="Flash", background_normal='', background_color=DARK_GREEN))
-        bot_bar.add_widget(Button(text="Flip Cam", background_normal='', background_color=DARK_GREEN))
-        layout.add_widget(bot_bar)
-
-        self.add_widget(layout)
+        
+        self.slide_area.add_widget(self.manual_input)
+        self.slide_area.add_widget(self.manual_search)
+        self.overlay.add_widget(self.slide_area)
+        
+        # Part C: The Green Pull-Tab
+        self.tab_area = BoxLayout(orientation='horizontal', size_hint=(1, None), height=25)
+        self.tab_area.add_widget(Widget()) # Empty space left
+        
+        self.btn_tab = Button(text="v", background_normal='', background_color=DARK_GREEN, color=WHITE, font_size='18sp', bold=True, size_hint=(None, 1), width=100)
+        self.btn_tab.bind(on_press=self.toggle_dropdown)
+        
+        self.tab_area.add_widget(self.btn_tab)
+        self.tab_area.add_widget(Widget()) # Empty space right
+        
+        self.overlay.add_widget(self.tab_area)
+        self.layout.add_widget(self.overlay)
+        self.add_widget(self.layout)
 
         # Camera Logic
         self.capture = cv2.VideoCapture(0)
@@ -160,23 +212,46 @@ class ScannerScreen(Screen):
         self.box_memory_frames = 0    
         self.cam_event = Clock.schedule_interval(self.update_camera, 1.0/30.0)
 
-    def toggle_manual_entry(self, instance):
-        """Slides the manual entry panel down or up."""
-        if self.manual_panel.height == 0:
-            self.manual_panel.height = 50
-            self.manual_panel.opacity = 1
+    # --- UI Canvas Update Helpers ---
+    def _update_top_rect(self, instance, value):
+        self.top_rect.pos = instance.pos
+        self.top_rect.size = instance.size
+        if not self.is_manual_open:
+            self.top_line.points = [instance.x, instance.y, instance.right, instance.y]
         else:
-            self.manual_panel.height = 0
-            self.manual_panel.opacity = 0
+            self.top_line.points = [0,0,0,0]
+
+    def _update_slide_rect(self, instance, value):
+        self.slide_rect.pos = instance.pos
+        self.slide_rect.size = instance.size
+        if self.is_manual_open:
+            self.slide_line.points = [instance.x, instance.y, instance.right, instance.y]
+        else:
+            self.slide_line.points = [0,0,0,0]
+
+    # --- Dropdown Logic ---
+    def toggle_dropdown(self, instance):
+        if not self.is_manual_open:
+            self.is_manual_open = True
+            self.btn_tab.text = "^"
+            self.slide_area.height = 55
+            self.slide_area.opacity = 1
+        else:
+            self.is_manual_open = False
+            self.btn_tab.text = "v"
+            self.slide_area.height = 0
+            self.slide_area.opacity = 0
+            self.manual_input.text = "" 
+            
+        self._update_top_rect(self.top_bar, None)
+        self._update_slide_rect(self.slide_area, None)
 
     def run_manual_search(self, instance):
         if self.manual_input.text:
             app = App.get_running_app()
             app.scanned_barcode = self.manual_input.text
-            self.manual_input.text = "" # clear it
-            self.toggle_manual_entry(None) # hide it
-            
-            # SLIDE UP to details!
+            self.manual_input.text = "" 
+            self.toggle_dropdown(None) 
             self.manager.transition = SlideTransition(direction='up')
             self.manager.current = 'details'
 
@@ -188,9 +263,15 @@ class ScannerScreen(Screen):
         ret, frame = self.capture.read()
         if not ret: return
 
+        h, w, _ = frame.shape
+        target_w = int(h * 0.75) 
+        start_x = (w - target_w) // 2
+        frame = frame[:, start_x:start_x+target_w]
+
         self.frame_counter += 1
         
-        if self.frame_counter % 5 == 0: 
+        # PAUSE SCANNING if the user is typing![cite: 7]
+        if self.frame_counter % 5 == 0 and not self.is_manual_open: 
             barcodes = pyzbar.decode(frame, symbols=[ZBarSymbol.EAN13, ZBarSymbol.EAN8, ZBarSymbol.UPCA, ZBarSymbol.UPCE])
             if not barcodes:
                 self.last_barcode_rect = None
@@ -203,17 +284,14 @@ class ScannerScreen(Screen):
             
             if len(self.scan_buffer) >= 3:
                 winner_barcode = Counter(self.scan_buffer).most_common(1)[0][0]
-                
                 if self.last_barcode_rect:
                     x, y, w, h = self.last_barcode_rect
                     cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 5)
-
+                
                 cv2.imwrite("last_scan.png", frame) 
                 
                 app = App.get_running_app()
                 app.scanned_barcode = winner_barcode
-                
-                # SLIDE UP to details!
                 self.manager.transition = SlideTransition(direction='up')
                 self.manager.current = 'details'
                 return
@@ -228,7 +306,6 @@ class ScannerScreen(Screen):
         image_texture = Texture.create(size=(frame.shape[1], frame.shape[0]), colorfmt='bgr')
         image_texture.blit_buffer(buf, colorfmt='bgr', bufferfmt='ubyte')
         self.img.texture = image_texture
-
 
 # ==========================================
 # SCREEN 3: ITEM DETAILS SCREEN

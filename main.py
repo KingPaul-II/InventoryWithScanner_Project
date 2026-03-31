@@ -78,7 +78,7 @@ class GreenButton(Button):
     def __init__(self, **kwargs):
         kwargs.setdefault('background_normal', '')
         kwargs.setdefault('background_color', (0, 0, 0, 0))
-        kwargs.setdefault('color', C_SURFACE)
+        kwargs.setdefault('color', (1, 1, 1, 1))
         kwargs.setdefault('font_size', sp(15))
         kwargs.setdefault('bold', True)
         super().__init__(**kwargs)
@@ -158,7 +158,7 @@ class StatusBadge(BoxLayout):
         kwargs.setdefault('size', (dp(52), dp(24)))
         super().__init__(**kwargs)
         with self.canvas.before:
-            Color(color[0], color[1], color[2], 0.08)
+            Color(color[0], color[1], color[2], 0.1)
             self._bg = RoundedRectangle(pos=self.pos, size=self.size, radius=[dp(12)])
         self.bind(pos=lambda *_: setattr(self._bg, 'pos', self.pos), size=lambda *_: setattr(self._bg, 'size', self.size))
         lbl = Label(text=text, color=color, font_size=sp(12), bold=True, halign='center', valign='middle')
@@ -202,7 +202,6 @@ class HomeScreen(Screen):
         if os.path.exists(ICON_SHARE):
             btn_share = IconButton(source=ICON_SHARE, size_hint=(None, None), size=(dp(30), dp(30)), pos_hint={'center_y': 0.5})
         else:
-            # We keep 'Share' as text here because the icon breaks
             btn_share = GhostButton(text='Share', font_size=sp(12), size_hint=(1, 0.8), pos_hint={'center_y': 0.5})
             
         btn_share.bind(on_press=lambda *_: open_global_settings())
@@ -277,9 +276,9 @@ class HomeScreen(Screen):
         scan_container.bind(pos=lambda w, *_: setattr(self.scan_circ, 'pos', w.pos), size=lambda w, *_: setattr(self.scan_circ, 'size', w.size))
 
         if os.path.exists(ICON_SCANNER):
-            scan_btn = IconButton(source=ICON_SCANNER, size_hint=(0.55, 0.55), pos_hint={'center_x': 0.5, 'center_y': 0.5}, color=C_SURFACE)
+            scan_btn = IconButton(source=ICON_SCANNER, size_hint=(0.55, 0.55), pos_hint={'center_x': 0.5, 'center_y': 0.5}, color=(1,1,1,1))
         else:
-            scan_btn = Button(text="[+]", font_size=sp(30), background_normal='', background_color=(0,0,0,0), bold=True, color=C_BG)
+            scan_btn = Button(text="[+]", font_size=sp(30), background_normal='', background_color=(0,0,0,0), bold=True, color=(1,1,1,1))
             
         scan_btn.bind(on_press=self._go_scan)
         scan_container.add_widget(scan_btn)
@@ -308,7 +307,7 @@ class ScannerScreen(Screen):
 
         top_bar = FloatLayout(size_hint=(1, None), height=dp(56), pos_hint={'top': 1})
         with top_bar.canvas.before:
-            Color(*C_SURFACE)
+            Color(1, 1, 1, 0.85)
             top_bar._bg = Rectangle(pos=top_bar.pos, size=top_bar.size)
         top_bar.bind(pos=lambda w, *_: setattr(w._bg, 'pos', w.pos), size=lambda w, *_: setattr(w._bg, 'size', w.size))
 
@@ -349,18 +348,17 @@ class ScannerScreen(Screen):
 
         bot_bar = BoxLayout(orientation='horizontal', size_hint=(1, None), height=dp(80), pos_hint={'x': 0, 'y': 0}, padding=[dp(20), dp(10)])
         with bot_bar.canvas.before:
-            Color(*C_SURFACE)
+            Color(1, 1, 1, 0.85)
             bot_bar._bg = Rectangle(pos=bot_bar.pos, size=bot_bar.size)
         bot_bar.bind(pos=lambda w, *_: setattr(w._bg, 'pos', w.pos), size=lambda w, *_: setattr(w._bg, 'size', w.size))
 
-        # RESTORED: Flash and Flip emojis
         if os.path.exists(ICON_FLASH):
-            btn_flash = IconButton(source=ICON_FLASH, size_hint=(None, None), size=(dp(30), dp(30)), pos_hint={'center_y': 0.5})
+            btn_flash = IconButton(source=ICON_FLASH, size_hint=(None, None), size=(dp(30), dp(30)), pos_hint={'center_y': 0.5}, color=C_TEXT)
         else:
             btn_flash = Button(text='⚡', font_size=sp(24), background_normal='', background_color=(0,0,0,0), color=C_TEXT, size_hint=(None, 0.6), width=dp(55), pos_hint={'center_y': 0.5})
 
         if os.path.exists(ICON_FLIP):
-            btn_flip = IconButton(source=ICON_FLIP, size_hint=(None, None), size=(dp(34), dp(34)), pos_hint={'center_y': 0.5})
+            btn_flip = IconButton(source=ICON_FLIP, size_hint=(None, None), size=(dp(34), dp(34)), pos_hint={'center_y': 0.5}, color=C_TEXT)
         else:
             btn_flip = Button(text='⟳', font_size=sp(28), background_normal='', background_color=(0,0,0,0), color=C_TEXT, size_hint=(None, 0.6), width=dp(55), pos_hint={'center_y': 0.5})
 
@@ -512,7 +510,7 @@ class DetailsScreen(Screen):
         if img_path and os.path.exists(img_path):
             img_box = BoxLayout(size_hint=(1, None), height=dp(150))
             with img_box.canvas.before:
-                Color(*C_BG) 
+                Color(0.92, 0.94, 0.96, 1) 
                 img_box._bg = RoundedRectangle(pos=img_box.pos, size=img_box.size, radius=[RADIUS])
             img_box.bind(pos=lambda w, *_: setattr(w._bg, 'pos', w.pos), size=lambda w, *_: setattr(w._bg, 'size', w.size))
             img_box.add_widget(Image(source=img_path, fit_mode="contain"))
@@ -521,7 +519,7 @@ class DetailsScreen(Screen):
         chip_row = BoxLayout(size_hint=(1, None), height=dp(32))
         chip = BoxLayout(size_hint=(None, 1), width=dp(210), padding=[dp(12), 0])
         with chip.canvas.before:
-            Color(0.93, 0.93, 0.93, 1) 
+            Color(0.9, 0.92, 0.94, 1) 
             chip._bg = RoundedRectangle(pos=chip.pos, size=chip.size, radius=[dp(16)])
         chip.bind(pos=lambda w, *_: setattr(w._bg, 'pos', w.pos), size=lambda w, *_: setattr(w._bg, 'size', w.size))
         chip.add_widget(Label(text=f'# {barcode}', font_size=sp(12), color=C_TEXT_MUTED))
@@ -535,7 +533,7 @@ class DetailsScreen(Screen):
         main.add_widget(Label(text='Quantity Adjustment', font_size=sp(11), color=C_TEXT_MUTED, halign='left', text_size=(Window.width - dp(40), None), size_hint=(1, None), height=dp(20)))
         qty_row = BoxLayout(orientation='horizontal', size_hint=(1, None), height=dp(52), spacing=dp(10))
         btn_minus = GhostButton(text='-', font_size=sp(22), size_hint=(None, 1), width=dp(52))
-        self.qty_lbl = Label(text='1', font_size=sp(24), bold=True, color=C_PRIMARY, size_hint=(1, 1))
+        self.qty_lbl = Label(text='1', font_size=sp(24), bold=True, color=C_TEXT, size_hint=(1, 1))
         btn_plus = GreenButton(text='+', font_size=sp(22), size_hint=(None, 1), width=dp(52))
         btn_minus.bind(on_press=lambda *_: self._change_qty(-1))
         btn_plus.bind(on_press=lambda *_: self._change_qty(1))
@@ -603,7 +601,7 @@ class UpdateScreen(Screen):
         tick_wrap = FloatLayout(size_hint=(1, None), height=dp(90))
         inner = BoxLayout(size_hint=(None, None), size=(dp(72), dp(72)), pos_hint={'center_x': 0.5, 'center_y': 0.5})
         with inner.canvas.before:
-            Color(0, 0.47, 0.42, 0.12) 
+            Color(0, 0.47, 0.42, 0.15) 
             inner._ell = Ellipse(pos=inner.pos, size=inner.size)
         inner.bind(pos=lambda w, *_: setattr(w._ell, 'pos', w.pos), size=lambda w, *_: setattr(w._ell, 'size', w.size))
         inner.add_widget(Label(text='OK', font_size=sp(22), bold=True, color=C_PRIMARY))
@@ -627,18 +625,16 @@ class UpdateScreen(Screen):
         nav = BoxLayout(orientation='horizontal', size_hint=(1, None), height=dp(50), spacing=dp(10))
 
         if os.path.exists(ICON_SHARE):
-            btn_share = IconButton(source=ICON_SHARE, size_hint=(0.20, 1))
+            btn_share = IconButton(source=ICON_SHARE, size_hint=(0.20, 1), color=C_TEXT)
         else:
-            # Replaced with text 'Share' so the weird empty box doesn't appear!
             btn_share = GhostButton(text='Share', font_size=sp(12), size_hint=(0.25, 1))
         btn_share.bind(on_press=lambda *_: open_global_settings())
 
         btn_again = GhostButton(text='Scan Again', size_hint=(0.50, 1))
         btn_again.bind(on_press=lambda *_: [setattr(self.manager, 'transition', SlideTransition(direction='right')), setattr(self.manager, 'current', 'scanner')])
 
-        # RESTORED: Home Emoji
         if os.path.exists(ICON_HOME):
-            btn_home = IconButton(source=ICON_HOME, size_hint=(0.25, 1))
+            btn_home = IconButton(source=ICON_HOME, size_hint=(0.25, 1), color=C_TEXT)
         else:
             btn_home = Button(text='⌂', font_size=sp(28), background_normal='', background_color=(0,0,0,0), color=C_TEXT, size_hint=(0.25, 1))
             
@@ -701,30 +697,8 @@ def open_global_settings():
     popup.open()
 
 def trigger_email_intent(recipient, mode):
-    content = ''
-    if mode == 'excel':
-        exporter.export_to_excel()
-        content = "Excel report generated locally. Please check your project folder."
-    else:
-        exporter.export_to_text()
-        txt_path = os.path.join(BASE_DIR, 'Inventory_Summary.txt')
-        if os.path.exists(txt_path):
-            with open(txt_path) as f:
-                content = f.read()
-
-    if platform == 'android':
-        from jnius import autoclass, cast
-        Intent = autoclass('android.content.Intent')
-        String  = autoclass('java.lang.String')
-        intent  = Intent(Intent.ACTION_SEND).setType('message/rfc822')
-        if recipient:
-            SA = autoclass('java.lang.String[]')
-            rec = SA(1); rec[0] = String(recipient)
-            intent.putExtra(Intent.EXTRA_EMAIL, rec)
-        intent.putExtra(Intent.EXTRA_SUBJECT, cast('java.lang.CharSequence', String(f'OptiStock Report ({mode.upper()})')))
-        intent.putExtra(Intent.EXTRA_TEXT, cast('java.lang.CharSequence', String(content)))
-        autoclass('org.kivy.android.PythonActivity').mActivity.startActivity(intent)
-    else:
+    content = "Inventory Report Attached"
+    if platform != 'android':
         sub  = urllib.parse.quote(f'OptiStock Report - {mode.upper()}')
         body = urllib.parse.quote(content)
         webbrowser.open(f'mailto:{recipient}?subject={sub}&body={body}')
